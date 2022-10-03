@@ -5,7 +5,6 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import message
 
 from keyboards.inline.rest_list import rest_button
-from keyboards.inline.login import  login_button
 
 from loader import dp
 from states.state import StateBot
@@ -17,11 +16,14 @@ async def bot_start(message: types.Message):
 
 @dp.callback_query_handler(state = StateBot.is_client)
 async def about_bot_message(call: types.CallbackQuery, state: FSMContext):
-    await call.answer(f'Вы успешно вошли как сотрудник', True)
-    print(f'{call.from_user.full_name} : {call.from_user.id}')
+    await call.answer(f'Вы успешно вошли как сотрудник {call.data}', show_alert=True)
     await state.update_data(
-        {"tg_id": call.from_user.id}
+        {"Никнейм":call.from_user.full_name,
+         "tg_id": call.from_user.id,
+         "Заведение": call.data}
     )
-    await call.message.answer('<strong>Отлично</strong>\n'
-                              'Теперь вы сотрудник')
+    data = await state.get_data()
+    print(f"{data['Никнейм']} : {data['tg_id']} : {data['Заведение']}")
     await StateBot.is_employee.set()
+
+
