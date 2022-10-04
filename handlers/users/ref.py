@@ -6,5 +6,6 @@ from loader import dp
 
 @dp.message_handler(commands=['ref'])
 async def bot_start(message: types.Message):
-    await message.answer('рефка')
+    link = 'https://t.me/dubna_hack_bot?start=' + str(message.from_user.id)
+    await message.answer(f'Твоя ссылка для приглашения: {link}\n\nТвои бонусы: 0')
 
