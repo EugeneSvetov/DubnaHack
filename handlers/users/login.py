@@ -21,7 +21,7 @@ session = Session(bind=engine)
 @dp.message_handler(commands=['login'], state=StateBot.is_client)
 async def bot_start(message: types.Message):
     await message.answer(
-        "👨‍🍳 Вы сотрудник ресторана? Выберете ресторан, на заказы из которого хотите получать уведомления",
+        f"👨‍🍳 Вы сотрудник ресторана?\n\nНажмите кнопку и мы сами определим где вы работаете и будем присылать данные о <b>каждом</b> заказе",
         reply_markup=rest_button)
 
 
@@ -34,7 +34,7 @@ async def about_bot_message(call: types.CallbackQuery):
     query = session.execute(
         f'SELECT * FROM webapp_stuff WHERE profile={owner_id}').fetchall()
     if len(query) != 0:
-        await call.answer("Вы успешно вошли как сотрудник своего ресторана", show_alert=True)
+        await call.answer("Вы успешно вошли как сотрудник своего ресторана ✅", show_alert=True)
         await StateBot.is_employee.set()
         restaurant_id = query[0][2]
         restaurant_name = session.execute(
@@ -42,29 +42,29 @@ async def about_bot_message(call: types.CallbackQuery):
         last_order = session.execute(
             f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
         names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
+        session.close()
         l = []
         for key in names_prices:
-            m = f'▪️"{key}" в количестве {names_prices[key]} шт.'
+            m = f'▪️<b>{key}</b> в количестве <b>{names_prices[key]}</b> шт.'
             l.append(m)
         message = '\n'.join(l)
-        await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
+        await bot.send_message(call.from_user.id, f'🥡Cостав заказа по адресу <b>{last_order[6]}</b> :\n{message} ')
+
         async def check():
             if last_order != session.execute(
                     f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first():
                 names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
                 l = []
                 for key in names_prices:
-                    m = f'▪️{key} в количестве {names_prices[key]} шт.'
+                    m = f'▪️<b>{key}</b> в количестве <b>{names_prices[key]}</b> шт.'
                     l.append(m)
                 message = '\n'.join(l)
-                await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
+                session.close()
+                await bot.send_message(call.from_user.id, f'🥡Cостав заказа по адресу <b>{last_order[6]}</b> :\n{message} ')
             else:
                 when_to_call = loop.time() + delay
                 loop.call_at(when_to_call, my_callback)
+
         await check()
-
-
-
-
     else:
         await call.answer(f'Вы не сотрудник 😡', show_alert=True)

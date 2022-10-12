@@ -22,6 +22,7 @@ async def buy(message: types.Message):
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
             f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').first()
+        session.close()
         dishes = ast.literal_eval(query[1])
         prices = ast.literal_eval(query[5])
         sales = query[13]
@@ -43,9 +44,9 @@ async def buy(message: types.Message):
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
             f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').fetchall()
-        print(query)
         restaurant_id = (query[0][12])
         restaurants = session.execute(f'SELECT title FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()
+        session.close()
         restaurant = restaurants[0][0]
         return restaurant
 
