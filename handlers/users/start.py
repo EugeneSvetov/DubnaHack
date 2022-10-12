@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 import aiogram
-import sqlalchemy as db
 from aiogram import types
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import insert
 
-from keyboards.inline.webappbutton import webapp_button
 from loader import dp
 from states.state import StateBot
 
@@ -37,18 +33,14 @@ async def bot_start(message: types.Message):
     if referal_code:
         if message.from_user.id != int(referal_code):
             await message.answer(f"Привет,  {message.from_user.full_name} 👋 !\n\nВы перешли по реф.ссылке\n\n"
-                                 f"Вы попали в Ex Minus ut Food — лучший сервис по доставке еды в Дубне.\n\n Нажмите кнопку ниже, чтобы оформить заказ 👇\n\n",
-                                 reply_markup=webapp_button)
-            await message.answer('После оформления заказа напишите команду "/buy", чтобы оплатить и получить ваш чек')
+                                 f"Вы попали в Ex Minus ut Food — лучший сервис по доставке еды в Дубне.\n\n Нажмите кнопку ниже, чтобы оформить заказ 👇\n\n")
             tg_id = message.from_user.id
             post_id(tg_id)
             await StateBot.is_client.set()
 
         else:
             await message.answer(f"Привет,  {message.from_user.full_name} 👋 !\n\n"
-                                 f"Вы попали в Ex Minus ut Food — лучший сервис по доставке еды в Дубне.\n\n Нажмите кнопку ниже, чтобы оформить заказ 👇\n\n",
-                                 reply_markup=webapp_button)
-            await message.answer('После оформления заказа напишите команду "/buy", чтобы оплатить и получить ваш чек')
+                                 f"Вы попали в Ex Minus ut Food — лучший сервис по доставке еды в Дубне.\n\n Нажмите кнопку ниже, чтобы оформить заказ 👇\n\n")
             tg_id = message.from_user.id
             post_id(tg_id)
             await StateBot.is_client.set()
@@ -56,11 +48,7 @@ async def bot_start(message: types.Message):
 
     else:
         await message.answer(f"Привет,  {message.from_user.full_name} 👋 !\n\n"
-                             f"Вы попали в Ex Minus ut Food — лучший сервис по доставке еды в Дубне.\n\n Нажмите кнопку ниже, чтобы оформить заказ 👇\n\n",
-                             reply_markup=webapp_button)
-        await message.answer('После оформления заказа напишите команду "/buy", чтобы оплатить и получить ваш чек')
+                             f'Вы попали в Ex Minus ut Food 👑 — лучший сервис по доставке еды в Дубне.\n\nВведите <b>/makeorder</b>, чтобы сделать заказ или <b>/login</b>, чтобы войти как сотрудник ресторана и отслеживть заказы\n\n')
         tg_id = message.from_user.id
         post_id(tg_id)
         await StateBot.is_client.set()
-
-

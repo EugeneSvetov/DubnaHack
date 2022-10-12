@@ -12,7 +12,7 @@ from loader import dp, bot
 from states.state import StateBot
 
 
-@dp.message_handler(commands=['buy'], state=StateBot.is_client)
+@dp.message_handler(commands=['buy'], state=StateBot.client_is_paying)
 async def buy(message: types.Message):
     def get_order():
         owner_id = str(message.from_user.id)
@@ -22,19 +22,14 @@ async def buy(message: types.Message):
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
             f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').first()
-        print(query)
         dishes = ast.literal_eval(query[1])
         prices = ast.literal_eval(query[5])
-        counts = ast.literal_eval(query[2])
         sales = query[13]
-        print(sales)
-        new_prices = map(lambda x, y: x * y, prices, counts)
-        print(new_prices)
         if sales != 0:
-            prices_with_sales = map(lambda x, y: x - y, new_prices, sales)
+            prices_with_sales = map(lambda x, y: x - y, prices, sales)
             order = dict(zip(prices_with_sales, dishes))
         else:
-            order = dict(zip(new_prices, dishes))
+            order = dict(zip(prices, dishes))
         tg_prices = []
         for k, v in order.items():
             tg_prices.append(types.LabeledPrice(label=v, amount=int(k) * 100))
@@ -71,14 +66,15 @@ async def buy(message: types.Message):
                            payload="test-invoice-payload")
 
 
-@dp.pre_checkout_query_handler(lambda query: True, state=StateBot.is_client)
+@dp.pre_checkout_query_handler(lambda query: True, state=StateBot.client_is_paying)
 async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
 
 
-@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state=StateBot.is_client)
+@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state=StateBot.client_is_paying)
 async def successful_payment(message: types.Message):
     print("SUCCESSFUL PAYMENT:")
     payment_info = message.successful_payment.to_python()
     await bot.send_message(message.chat.id,
                            f'Платеж на сумму {message.successful_payment.total_amount // 100} {message.successful_payment.currency} прошел успешно.\nЧтобы получить чек, нажмите выше на кнопку "Чек"')
+    await StateBot.is_client.set()

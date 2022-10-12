@@ -33,21 +33,21 @@ async def about_bot_message(call: types.CallbackQuery):
     owner_id: Final = str(call.from_user.id)
     query = session.execute(
         f'SELECT * FROM webapp_stuff WHERE profile={owner_id}').fetchall()
-    if query != None:
+    if len(query) != 0:
+        await call.answer("Вы успешно вошли как сотрудник своего ресторана", show_alert=True)
+        await StateBot.is_employee.set()
         restaurant_id = query[0][2]
         restaurant_name = session.execute(
             f'SELECT * FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()[0][1]
         last_order = session.execute(
             f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
-        # names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
-        # l = []
-        # for key in names_prices:
-        #     m = f'▪️"{key}" в количестве {names_prices[key]} шт.'
-        #     l.append(m)
-        # message = '\n'.join(l)
-        # await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
-        last_order = session.execute(
-            f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
+        names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
+        l = []
+        for key in names_prices:
+            m = f'▪️"{key}" в количестве {names_prices[key]} шт.'
+            l.append(m)
+        message = '\n'.join(l)
+        await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
         async def check():
             if last_order != session.execute(
                     f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first():
@@ -68,4 +68,3 @@ async def about_bot_message(call: types.CallbackQuery):
 
     else:
         await call.answer(f'Вы не сотрудник 😡', show_alert=True)
-        await StateBot.is_employee.set()
