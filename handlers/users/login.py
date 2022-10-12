@@ -2,6 +2,7 @@
 
 import ast
 import asyncio
+from typing import Final
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -27,41 +28,41 @@ async def bot_start(message: types.Message):
 @dp.callback_query_handler(state=StateBot.is_client)
 async def about_bot_message(call: types.CallbackQuery):
     def my_callback():
-        asyncio.ensure_future(about_bot_message(call))
+        asyncio.ensure_future(check())
 
-    owner_id = str(call.from_user.id)
+    owner_id: Final = str(call.from_user.id)
     query = session.execute(
         f'SELECT * FROM webapp_stuff WHERE profile={owner_id}').fetchall()
     if query != None:
-        await call.answer('Вы успешно вошли как сотрудник своего ресторана', show_alert=True)
         restaurant_id = query[0][2]
         restaurant_name = session.execute(
             f'SELECT * FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()[0][1]
         last_order = session.execute(
             f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
-        print(last_order)
-        names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
-        l = []
-        for key in names_prices:
-            m = f'▪️"{key}" в количестве {names_prices[key]} шт.'
-            l.append(m)
-        message = '\n'.join(l)
-        await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n\n{message} ')
-        if last_order != session.execute(
-                f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first():
-            last_order = session.execute(
-                f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
-            names_prices = dict(zip(ast.literal_eval(last_order[0][1]), ast.literal_eval(last_order[0][2])))
-            print(last_order)
-            l = []
-            for key in names_prices:
-                m = f'▪️{key} в количестве {names_prices[key]} шт.'
-                l.append(m)
-            message = '\n'.join(l)
-            await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
+        # names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
+        # l = []
+        # for key in names_prices:
+        #     m = f'▪️"{key}" в количестве {names_prices[key]} шт.'
+        #     l.append(m)
+        # message = '\n'.join(l)
+        # await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
+        last_order = session.execute(
+            f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
+        async def check():
+            if last_order != session.execute(
+                    f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first():
+                names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
+                l = []
+                for key in names_prices:
+                    m = f'▪️{key} в количестве {names_prices[key]} шт.'
+                    l.append(m)
+                message = '\n'.join(l)
+                await bot.send_message(call.from_user.id, f'Cостав заказа по адресу "{last_order[6]}" :\n{message} ')
+            else:
+                when_to_call = loop.time() + delay
+                loop.call_at(when_to_call, my_callback)
+        await check()
 
-        when_to_call = loop.time() + delay
-        loop.call_at(when_to_call, my_callback)
 
 
 

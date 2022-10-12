@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import aiogram
 import sqlalchemy as db
 from aiogram import types
 from sqlalchemy import create_engine
@@ -23,10 +23,9 @@ def post_id(tg_id):
     if len(flag) > 0:
         print("")
     else:
-        query = f'INSERT INTO webapp_profile (tg_id) VALUES ({int(tg_id)})'
-        bonus = f'INSERT INTO webapp_profile (bonus) VALUES ({int(200)})'
+        query = f'INSERT INTO webapp_profile (tg_id, bonus) VALUES ({int(tg_id)}, {int(200)})'
+        aiogram.WebAppInitData
         engine.execute(query)
-        engine.execute(bonus)
         engine.dispose()
     return print('')
 

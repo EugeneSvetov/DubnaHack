@@ -21,12 +21,12 @@ async def buy(message: types.Message):
         session = Session(bind=engine)
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
-            f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').fetchall()
-        session.close()
-        dishes = ast.literal_eval(query[0][1])
-        prices = ast.literal_eval(query[0][5])
-        counts = ast.literal_eval(query[0][2])
-        sales = query[0][13]
+            f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').first()
+        print(query)
+        dishes = ast.literal_eval(query[1])
+        prices = ast.literal_eval(query[5])
+        counts = ast.literal_eval(query[2])
+        sales = query[13]
         print(sales)
         new_prices = map(lambda x, y: x * y, prices, counts)
         print(new_prices)
@@ -48,20 +48,21 @@ async def buy(message: types.Message):
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
             f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').fetchall()
+        print(query)
         restaurant_id = (query[0][12])
         restaurants = session.execute(f'SELECT title FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()
         restaurant = restaurants[0][0]
         return restaurant
 
     await bot.send_invoice(message.chat.id,
-                           title="Ваш заказ готов к оплате",
-                           description=f"Заказ из ресторана {get_rest()}",
+                           title=f"Заказ из ресторана {get_rest()}",
+                           description=" ",
                            provider_token=PAYMENTS_TOKEN,
                            currency="rub",
-                           photo_url="https://www.clipartkey.com/mpngs/m/327-3271974_burger-font.png",
-                           photo_width=900,
-                           photo_height=560,
-                           photo_size=900,
+                           photo_url="https://itadakimasuanime.files.wordpress.com/2014/11/tataki-salad-tempura-fate-stay-night-unlimited-blade-works-04.png",
+                           photo_width=2880,
+                           photo_height=1620,
+                           photo_size=2880,
                            need_email=True,
                            need_phone_number=True,
                            need_shipping_address=False,
@@ -70,18 +71,14 @@ async def buy(message: types.Message):
                            payload="test-invoice-payload")
 
 
-@dp.pre_checkout_query_handler(lambda query: True)
+@dp.pre_checkout_query_handler(lambda query: True, state=StateBot.is_client)
 async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
 
 
-@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
+@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state=StateBot.is_client)
 async def successful_payment(message: types.Message):
     print("SUCCESSFUL PAYMENT:")
     payment_info = message.successful_payment.to_python()
-    for k, v in payment_info.items():
-        print(f"{k} = {v}")
-
     await bot.send_message(message.chat.id,
-                           f"Платеж на сумму {message.successful_payment.total_amount // 100} {message.successful_payment.currency} прошел успешно!!!")
-    await StateBot.is_client.finish()
+                           f'Платеж на сумму {message.successful_payment.total_amount // 100} {message.successful_payment.currency} прошел успешно.\nЧтобы получить чек, нажмите выше на кнопку "Чек"')
