@@ -17,7 +17,7 @@ async def buy(message: types.Message):
     def get_order():
         owner_id = str(message.from_user.id)
         engine = create_engine(
-            f'postgresql://etmlokgwbnykro:c41c54ac5c89c73e23a3ee26e827115b04acbdf6322a5cefad144bab37ae1aef@ec2-52-4-87-74.compute-1.amazonaws.com:5432/d5n6nt2sh4lhdl')
+            f'postgresql://mchdxzgiplfwal:62a4b84119b5d0420e513481504d6dde8fb1b7c1b7371f289453e1aa0696acf2@ec2-52-4-87-74.compute-1.amazonaws.com:5432/d1bku3sv3h5gug')
         session = Session(bind=engine)
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
@@ -26,25 +26,21 @@ async def buy(message: types.Message):
         dishes = ast.literal_eval(query[1])
         prices = ast.literal_eval(query[5])
         sales = query[13]
-        if sales != 0:
-            prices_with_sales = map(lambda x, y: x - y, prices, sales)
-            order = dict(zip(prices_with_sales, dishes))
-        else:
-            order = dict(zip(prices, dishes))
-        tg_prices = []
+        order = dict(zip(prices, dishes))
+        tg_prices = [types.LabeledPrice(label="Услуга курьера", amount=150 * 100)]
         for k, v in order.items():
-            tg_prices.append(types.LabeledPrice(label=v, amount=int(k) * 100))
+            tg_prices.append(types.LabeledPrice(label=v, amount=int(k) * 100 - int(sales)))
         return tg_prices
 
     def get_rest():
         owner_id = str(message.from_user.id)
         engine = create_engine(
-            f'postgresql://etmlokgwbnykro:c41c54ac5c89c73e23a3ee26e827115b04acbdf6322a5cefad144bab37ae1aef@ec2-52-4-87-74.compute-1.amazonaws.com:5432/d5n6nt2sh4lhdl')
+            f'postgresql://mchdxzgiplfwal:62a4b84119b5d0420e513481504d6dde8fb1b7c1b7371f289453e1aa0696acf2@ec2-52-4-87-74.compute-1.amazonaws.com:5432/d1bku3sv3h5gug')
         session = Session(bind=engine)
         id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
         query = session.execute(
             f'SELECT * FROM webapp_order WHERE owner_id={id[0][0]} ORDER BY date_of_create DESC').fetchall()
-        restaurant_id = (query[0][12])
+        restaurant_id = query[0][12]
         restaurants = session.execute(f'SELECT title FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()
         session.close()
         restaurant = restaurants[0][0]
@@ -74,8 +70,16 @@ async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state=StateBot.client_is_paying)
 async def successful_payment(message: types.Message):
-    print("SUCCESSFUL PAYMENT:")
+    owner_id = str(message.from_user.id)
     payment_info = message.successful_payment.to_python()
     await bot.send_message(message.chat.id,
                            f'Платеж на сумму {message.successful_payment.total_amount // 100} {message.successful_payment.currency} прошел успешно.\nЧтобы получить чек, нажмите выше на кнопку "Чек"')
+    engine = create_engine(
+        f'postgresql://mchdxzgiplfwal:62a4b84119b5d0420e513481504d6dde8fb1b7c1b7371f289453e1aa0696acf2@ec2-52-4-87-74.compute-1.amazonaws.com:5432/d1bku3sv3h5gug')
+    session = Session(bind=engine)
+    id = session.execute(f'SELECT id FROM webapp_profile WHERE tg_id={owner_id}').fetchall()
+    query = f'UPDATE webapp_order SET is_pay={True} WHERE owner_id={int(id[0][0])}'
+    engine.execute(query)
+    session.close()
+    engine.dispose()
     await StateBot.is_client.set()
