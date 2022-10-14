@@ -26,41 +26,14 @@ async def bot_start(message: types.Message):
 
 @dp.callback_query_handler(state=StateBot.is_client)
 async def about_bot_message(call: types.CallbackQuery):
-    def add_schedule():
-        scheduler.add_job(scheduled, "interval", seconds=5)
-
-    async def scheduled():
-        restaurant_name = session.execute(
-            f'SELECT * FROM webapp_restaurant WHERE id={restaurant_id}').fetchall()[0][1]
-        last_order = session.execute(
-            f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
-        await asyncio.sleep(5)
-        if last_order != session.execute(
-                f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first():
-            last_order = session.execute(
-                f'SELECT * FROM webapp_order WHERE restaurant_id={restaurant_id} ORDER BY date_of_create DESC').first()
-            names_prices = dict(zip(ast.literal_eval(last_order[1]), ast.literal_eval(last_order[2])))
-            l = []
-            for key in names_prices:
-                m = f'▪️<b>{key}</b> в количестве <b>{names_prices[key]}</b> шт.'
-                l.append(m)
-            message = '\n'.join(l)
-            print(last_order)
-            session.close()
-            await bot.send_message(call.from_user.id,
-                                   f'{"✅" if last_order[4] == True else "❎"}Cостав заказа по адресу <b>{last_order[11]}</b> :\n{message} ')
-
     owner_id = str(call.from_user.id)
     query = session.execute(
         f'SELECT * FROM webapp_stuff WHERE profile={owner_id}').fetchall()
     if len(query) != 0:
-        await call.answer("Вы успешно вошли как сотрудник своего ресторана ✅", show_alert=True)
+        await call.answer("Вы успешно вошли как сотрудник вашего ресторана ✅", show_alert=True)
+        await bot.send_message(call.from_user.id,'❗️ Введите <b>/last_order</b>, чтобы увидеть последний заказ или <b>/log_out</b>, чтобы выйти из режима сотрудника')
         await StateBot.is_employee.set()
         restaurant_id = query[0][2]
-        add_schedule()
-
-
-
 
     else:
         await call.answer(f'Вы не сотрудник 😡', show_alert=True)
